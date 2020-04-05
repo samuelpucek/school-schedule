@@ -3,8 +3,6 @@ import optimization
 
 subjects, limits = input.reader()
 
-x = optimization.schedule(subjects, limits)
+my_schedule = optimization.Scheduler(subjects, limits)
+my_schedule.schedule()
 
-# schedule = optimization.transformer(x)
-
-# print(schedule)

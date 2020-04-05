@@ -2,84 +2,94 @@ from itertools import product
 from mip import Model, xsum, maximize, BINARY
 import pandas as pd
 
-import input
 
-sub, lim = input.reader()
-
-
-def schedule(subjetcs: dict, limits: list):
+class Scheduler:
     """
-    Core optimization procedure - mixed integer programming.
-
-    :param subjetcs:
-    :param limits:
-    :return: schedules: dataframe containing optimal schedules for each class
+    Optimization and creating schedules.
     """
 
-    # Constants
-    C = len(limits)  # number of classes
-    S = len(subjetcs)  # number of subjects
-    D = 5  # days of week
-    H = 5  # hours per day
+    def __init__(self, subjects: dict, limits: list):
+        """
+        Constructor - extract and save constants.
+        Save subjects dictionary and limits list as local variables.
 
-    # Save as range
-    S = range(S)
-    D = range(D)
-    H = range(H)
+        Constants
+        ---------
+        C: number of classes
+        S: number of subjects
+        D: days of week
+        H: hours per day
+        """
+        # Constants
+        self.C = len(limits)  # number of classes
+        self.S = len(subjects)  # number of subjects
+        self.D = 5  # days of week
+        self.H = 5  # hours per day
 
-    # Initialize model
-    model = Model('schedule')
+        # Save as range
+        self.C = range(self.C)
+        self.S = range(self.S)
+        self.D = range(self.D)
+        self.H = range(self.H)
 
-    # Binary decision variables
-    x = [[[model.add_var(var_type=BINARY, name='({},{},{})'.format(s + 1, d + 1, h + 1))
-           for h in H] for d in D] for s in S]
+        # Save subjects and limits as local variables
+        self.sub = subjects
+        self.lim = limits
 
-    # Def objective function
-    model.objective = maximize(xsum(x[s][d][h] for s in S for d in D for h in H))
+    def schedule(self):
+        """
+        Keynote.
+        """
+        optimal_x = self._optimize()
+        self._printer(optimal_x)
+        return
 
-    # Constraints
-    for s in S:
-        model += xsum(x[s][d][h] for h in H for d in D) == lim[0][s]
+    def _optimize(self):
+        """
+        Core optimization procedure - mixed integer programming.
+        """
 
-    for (d, h) in product(D, H):
-        model += xsum(x[s][d][h] for s in S) <= 1
+        # Initialize model
+        model = Model('schedule')
 
-    for (s, d) in product(S, D):
-        model += xsum(x[s][d][h] for h in H) <= 2  # TODO opravit
+        # Binary decision variables
+        x = [[[model.add_var(var_type=BINARY, name='({},{},{})'.format(s + 1, d + 1, h + 1))
+               for h in self.H] for d in self.D] for s in self.S]
 
-    # Optimization
-    model.optimize()
+        # Def objective function
+        model.objective = maximize(xsum(x[s][d][h] for s in self.S for d in self.D for h in self.H))
 
-    # Rozvrh
-    df = pd.DataFrame(index=['Pon', 'Utr', 'Str', 'Stv', 'Pia'], columns=[1, 2, 3, 4, 5])
+        # Constraints
+        for s in self.S:
+            model += xsum(x[s][d][h] for h in self.H for d in self.D) == self.lim[0][s]
 
-    for (s, d, h) in product(S, D, H):
-        if x[s][d][h].x == 1:
-            df.iloc[d, h] = subjetcs[s]
+        for (d, h) in product(self.D, self.H):
+            model += xsum(x[s][d][h] for s in self.S) <= 1
 
-    df.fillna('   ', inplace=True)
-    print(df)
+        for (s, d) in product(self.S, self.D):
+            model += xsum(x[s][d][h] for h in self.H) <= 2  # TODO opravit
 
-    return x
+        # Optimization
+        model.optimize()
 
+        # TODO: ako spravne handlovat premenne medzi metodami? Kukni sa do Buresa aka STB
+        return x
 
-def transformer(x):
-    """
-    Transform ugly optimization output into nice readable dataframe - schedule.
+    def _printer(self, x):
+        """
+        Transform optimal solution (binary decision variables) and create nice human readable schedules.
+        """
 
-    :param x: binary decision variabe - class x subject x day x hour
-    :return: schedule: dataframe
-    """
+        # Rozvrh
+        df = pd.DataFrame(index=['Pon', 'Utr', 'Str', 'Stv', 'Pia'], columns=[1, 2, 3, 4, 5])
 
-    # Rozvrh
-    df = pd.DataFrame(index=['Pon', 'Utr', 'Str', 'Stv', 'Pia'], columns=[1, 2, 3, 4, 5])
+        for (s, d, h) in product(self.S, self.D, self.H):
+            if x[s][d][h].x == 1:
+                df.iloc[d, h] = self.sub[s]
 
-    for (s, d, h) in product(S, D, H):
-        if x[s][d][h].x == 1:
-            df.iloc[d, h] = subjetcs[s]
+        df.fillna('   ', inplace=True)
+        print(df)
 
-    df.fillna('   ', inplace=True)
-    print(df)
+        return x
 
 # TODO: Prerob to na CLASS, do init daj S, H, D, dve metody: optimize, refacotr / translate
-
