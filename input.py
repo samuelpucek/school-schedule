@@ -35,4 +35,8 @@ def reader():
     # Extract limits for classes
     d = df.iloc[:, 1:]
     limits = d.T.values.tolist()
-    return sub_dict, limits
+
+    # Extract classes
+    classes = df.columns.tolist()[1:]
+
+    return sub_dict, limits, classes

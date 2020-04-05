@@ -1,10 +1,8 @@
 import input
 import optimization
 
-subjects, limits = input.reader()
+subjects, limits, classes = input.reader()
 
-x = optimization.schedule(subjects, limits)
+my_schedule = optimization.Scheduler(subjects, limits, classes)
+my_schedule.schedule()
 
-# schedule = optimization.transformer(x)
-
-# print(schedule)

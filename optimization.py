@@ -2,84 +2,121 @@ from itertools import product
 from mip import Model, xsum, maximize, BINARY
 import pandas as pd
 
-import input
 
-sub, lim = input.reader()
-
-
-def schedule(subjetcs: dict, limits: list):
+class Scheduler:
     """
-    Core optimization procedure - mixed integer programming.
-
-    :param subjetcs:
-    :param limits:
-    :return: schedules: dataframe containing optimal schedules for each class
+    Optimization and creating schedules.
     """
 
-    # Constants
-    C = len(limits)  # number of classes
-    S = len(subjetcs)  # number of subjects
-    D = 5  # days of week
-    H = 5  # hours per day
+    def __init__(self, subjects: dict, limits: list, classes: list):
+        """
+        Constructor - extract and save constants.
+        Save subjects dictionary, limits list and list of classes as local variables.
 
-    # Save as range
-    S = range(S)
-    D = range(D)
-    H = range(H)
+        Constants
+        ---------
+        C: number of classes
+        S: number of subjects
+        D: days of week
+        H: hours per day
+        """
+        # Constants
+        self.no_classes = len(limits)  # number of classes
+        self.no_subjects = len(subjects)  # number of subjects
+        self.no_days = 5  # days of week
+        self.no_hours = 6  # hours per day
 
-    # Initialize model
-    model = Model('schedule')
+        # Save as range
+        self.C = range(self.no_classes)
+        self.S = range(self.no_subjects)
+        self.D = range(self.no_days)
+        self.H = range(self.no_hours)
 
-    # Binary decision variables
-    x = [[[model.add_var(var_type=BINARY, name='({},{},{})'.format(s + 1, d + 1, h + 1))
-           for h in H] for d in D] for s in S]
+        # Save subjects and limits as local variables
+        self.sub = subjects
+        self.lim = limits
+        self.classes = classes
 
-    # Def objective function
-    model.objective = maximize(xsum(x[s][d][h] for s in S for d in D for h in H))
+    def schedule(self):
+        """
+        Keynote.
+        """
+        optimal_x = self._optimize()
+        self._printer(optimal_x)
+        return
 
-    # Constraints
-    for s in S:
-        model += xsum(x[s][d][h] for h in H for d in D) == lim[0][s]
+    def _optimize(self):
+        """
+        Core optimization procedure - mixed integer programming.
+        """
 
-    for (d, h) in product(D, H):
-        model += xsum(x[s][d][h] for s in S) <= 1
+        # Initialize model
+        model = Model('schedule')
 
-    for (s, d) in product(S, D):
-        model += xsum(x[s][d][h] for h in H) <= 2  # TODO opravit
+        # Binary decision variables
+        x = [[[[model.add_var(var_type=BINARY,
+                              name='class:{}, subj:{}, day:{}, hour:{})'.format(c + 1, s + 1, d + 1, h + 1))
+                for h in self.H] for d in self.D] for s in self.S] for c in self.C]
 
-    # Optimization
-    model.optimize()
+        # Objective function
+        model.objective = maximize(xsum(x[c][s][d][h] for c in self.C for s in self.S for d in self.D for h in self.H))
 
-    # Rozvrh
-    df = pd.DataFrame(index=['Pon', 'Utr', 'Str', 'Stv', 'Pia'], columns=[1, 2, 3, 4, 5])
+        # Constraints
+        # Satisfy initial conditions
+        for (c, s) in product(self.C, self.S):
+            model += xsum(x[c][s][d][h] for h in self.H for d in self.D) == self.lim[c][s]
 
-    for (s, d, h) in product(S, D, H):
-        if x[s][d][h].x == 1:
-            df.iloc[d, h] = subjetcs[s]
+        # Max one lesson in one slot
+        for (c, d, h) in product(self.C, self.D, self.H):
+            model += xsum(x[c][s][d][h] for s in self.S) <= 1
 
-    df.fillna('   ', inplace=True)
-    print(df)
+        # Max limit for the same subject in the same day
+        daily_limits = [[i // 5 + 1 for i in self.lim[c]] for c in self.C]
+        for (c, s, d) in product(self.C, self.S, self.D):
+            model += xsum(x[c][s][d][h] for h in self.H) <= daily_limits[c][s]
+        # TODO: Celkom OK, 5x za tyzden len limit 2 (chyba), dvojhodinovky VYV (pripadne ine predmety) dorobit
 
-    return x
+        # Max hours per day + no empty slots
+        for c in self.C:
+            if sum(self.lim[c]) <= 25:  # Max 25 hours per week
+                for d in self.D:  # Deny 6. hour
+                    model += xsum(x[c][s][d][h] for s in self.S for h in range(5, self.no_hours)) == 0
+                for d in self.D:  # No empty slots
+                    model += xsum(x[c][s][d][h] for s in self.S for h in range(4)) == 4
 
+            elif sum(self.lim[c]) <= 30:  # Max 30 hours per week
+                for d in self.D:  # No empty slots
+                    model += xsum(x[c][s][d][h] for s in self.S for h in range(5)) == 5
+            # TODO: Sprav obecnejsie, ako kumulativny sucet, nemusis to pisat zvlast pre max 25 a max 30
 
-def transformer(x):
-    """
-    Transform ugly optimization output into nice readable dataframe - schedule.
+        # Optimization
+        model.optimize()
 
-    :param x: binary decision variabe - class x subject x day x hour
-    :return: schedule: dataframe
-    """
+        # TODO: Pridaj dalsie triedy
+        # TODO: Pridaj ucitelov (? uvazky)
 
-    # Rozvrh
-    df = pd.DataFrame(index=['Pon', 'Utr', 'Str', 'Stv', 'Pia'], columns=[1, 2, 3, 4, 5])
+        return x
 
-    for (s, d, h) in product(S, D, H):
-        if x[s][d][h].x == 1:
-            df.iloc[d, h] = subjetcs[s]
+    def _printer(self, x):
+        """
+        Transform optimal solution (binary decision variables) and create nice human readable schedules.
+        """
+        cnt = 0
 
-    df.fillna('   ', inplace=True)
-    print(df)
+        # Schedules
+        for c in self.C:
+            list_of_hours = [h + 1 for h in self.H]
+            df = pd.DataFrame(index=['Pon', 'Utr', 'Str', 'Stv', 'Pia'], columns=list_of_hours)
+            for (s, d, h) in product(self.S, self.D, self.H):
+                if x[c][s][d][h].x == 1:
+                    df.iloc[d, h] = self.sub[s]
+                    cnt = cnt + 1
 
-# TODO: Prerob to na CLASS, do init daj S, H, D, dve metody: optimize, refacotr / translate
+            df.fillna('   ', inplace=True)
 
+            # Print out
+            print('        ** {} trieda **'.format(self.classes[c]))
+            print(df)
+            print()
+        print('cnt: {}'.format(cnt))
+        return x
