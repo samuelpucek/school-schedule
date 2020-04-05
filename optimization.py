@@ -115,7 +115,7 @@ class Scheduler:
             df.fillna('   ', inplace=True)
 
             # Print out
-            print('        ** {} trieda **'.format(self.classes[c]))
+            print('            ** {} **'.format(self.classes[c]))
             print(df)
             print()
         print('cnt: {}'.format(cnt))

@@ -24,7 +24,8 @@ def reader():
     """
 
     # Import csv as DataFrame
-    df = pd.read_csv('limits.csv')
+    # df = pd.read_csv('limits_basic.csv')
+    df = pd.read_csv('limits_medium.csv')
 
     # Extract subjects
     sub = df['subjects']
@@ -32,11 +33,16 @@ def reader():
     # Convert subjects into dictionary
     sub_dict: dict = {i: sub[i] for i in range(len(sub))}
 
-    # Extract limits for classes
-    d = df.iloc[:, 1:]
-    limits = d.T.values.tolist()
+    # Number of rows, columns
+    row, col = df.shape
+
+    # Select limiting columns indexes
+    cols = [i for i in range(col) if i % 2 == 1]
+
+    # Select limiting columns
+    limits = df.iloc[:, cols].T.values.tolist()
 
     # Extract classes
-    classes = df.columns.tolist()[1:]
+    classes = [df.columns.tolist()[i] for i in cols]
 
     return sub_dict, limits, classes
