@@ -24,8 +24,8 @@ def reader():
     """
 
     # Import csv as DataFrame
-    # df = pd.read_csv('limits_basic.csv')
-    df = pd.read_csv('limits_medium.csv')
+    # df = pd.read_csv('resources/limits_basic.csv')
+    df = pd.read_csv('resources/limits_medium.csv')
 
     # Extract subjects
     sub = df['subjects']

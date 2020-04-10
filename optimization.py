@@ -1,6 +1,7 @@
 from itertools import product
 from mip import Model, xsum, maximize, BINARY
 import pandas as pd
+import datetime
 
 
 class Scheduler:
@@ -43,6 +44,7 @@ class Scheduler:
         """
         optimal_x = self._optimize()
         self._printer(optimal_x)
+        # self._file_printer(optimal_x)
         return
 
     def _optimize(self):
@@ -119,4 +121,27 @@ class Scheduler:
             print(df)
             print()
         print('cnt: {}'.format(cnt))
-        return x
+
+    def _file_printer(self, x):
+        """
+        Print out schedules into txt file.
+        """
+
+        # Set output filename
+        now = datetime.datetime.now()
+        filename = 'outputs/classes_' + now.strftime('%Y-%m-%d_%H:%M') + '.txt'
+
+        with open(filename, 'w') as f:
+            for c in self.C:
+                list_of_hours = [h + 1 for h in self.H]
+                df = pd.DataFrame(index=['Pon', 'Utr', 'Str', 'Stv', 'Pia'], columns=list_of_hours)
+                for (s, d, h) in product(self.S, self.D, self.H):
+                    if x[c][s][d][h].x == 1:
+                        df.iloc[d, h] = self.sub[s]
+
+                df.fillna('   ', inplace=True)
+
+                # Print out
+                print('            ** {} **'.format(self.classes[c]), file=f)
+                print(df, file=f)
+                print(file=f)
