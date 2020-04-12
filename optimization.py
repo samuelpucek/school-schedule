@@ -11,17 +11,6 @@ class Scheduler:
 
     def __init__(self, subjects: dict, limits: list, classes: list, teachers_restrictions: list,
                  teachers_dict_reverse: dict):
-        """
-        Constructor - extract and save constants.
-        Save subjects dictionary, limits list and list of classes as local variables.
-
-        Constants
-        ---------
-        C: number of classes
-        S: number of subjects
-        D: days of week
-        H: hours per day
-        """
         # Constants
         self.no_classes = len(limits)  # number of classes
         self.no_subjects = len(subjects)  # number of subjects

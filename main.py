@@ -1,7 +1,7 @@
-import input
+import reader
 import optimization
 
-subjects, limits, classes, teachers_restrictions_code, teachers_dict_reverse = input.reader()
+subjects, limits, classes, teachers_restrictions_code, teachers_dict_reverse = reader.reader()
 
 my_schedule = optimization.Scheduler(subjects, limits, classes, teachers_restrictions_code, teachers_dict_reverse)
 my_schedule.schedule()
