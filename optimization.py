@@ -9,14 +9,14 @@ class Scheduler:
     Optimization and creating schedules.
     """
 
-    def __init__(self, subjects: dict, limits: list, classes: list, teachers_restrictions: list,
-                 teachers_dict_reverse: dict):
+    def __init__(self, classes_names: dict, classes_restrictions: dict, teachers_names: dict,
+                 teachers_restrictions: dict, subject_names: dict):
         # Constants
-        self.no_classes = len(limits)  # number of classes
-        self.no_subjects = len(subjects)  # number of subjects
+        self.no_classes = len(classes_restrictions)  # number of classes
+        self.no_subjects = len(subject_names)  # number of subjects
         self.no_days = 5  # days of week
         self.no_hours = 6  # hours per day
-        self.no_teachers = len(teachers_dict_reverse)  # number of teachers
+        self.no_teachers = len(teachers_names)  # number of teachers
 
         # Save as range
         self.C = range(self.no_classes)
@@ -26,11 +26,11 @@ class Scheduler:
         self.H = range(self.no_hours)
 
         # Save subjects and limits as local variables
-        self.sub = subjects
-        self.lim = limits
-        self.classes = classes
+        self.sub = subject_names
+        self.lim = classes_restrictions
+        self.classes = classes_names
         self.teachers_restrictions = teachers_restrictions
-        self.teachers_dict_reverse = teachers_dict_reverse
+        self.teachers_dict_reverse = teachers_names
 
     def schedule(self):
         """

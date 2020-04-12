@@ -1,90 +1,130 @@
 import pandas as pd
 
 
-def reader():
-    """
-    Method for reading csv file containing hour classes_restrictions for each grade.
+class Reader:
+    """ Reading input files and running basic checks. """
 
-    About
-    -----
-    1. Create dictionary of subjects. Necessary for backwards assignment after optimization.
-    2. Create list of hour classes_restrictions conditions for each grade.
+    def __init__(self, file_name: str):
+        self.file_name = file_name
 
-    Input example
-    -------------
-    subjects	I.A		    II.A	    III.A
-    CJL	        8	LM	    7	KA	    7	VR
-    ANJ	        1	HO	    2	HO	    3	AG
-    SPJ         1	SP	    1	SP	    1	SP
-    MAT	        4	LM	    4	KA	    5	VR
+        self.classes_names = dict()
+        self.classes_restrictions = dict()
+        self.teachers_names = dict()
+        self.teachers_restrictions = dict()
+        self.subjects_names = dict()
 
-    Return
-    ------
-    sub_dict: dictionary of subjects
-    classes_restrictions: list of hour limits
-    """
+    def read(self):
+        """ Main method """
+        self._file_reader()
+        self._check_teachers()
+        self._check_classes()
+        return self.classes_names, self.classes_restrictions, self.teachers_names, self.teachers_restrictions, self.subjects_names
 
-    # Import csv as DataFrame
-    # df = pd.read_csv('resources/classes_restrictions_medium.csv')
-    df = pd.read_csv('resources/limits_bc.csv')
+    def _file_reader(self):
+        """
+        Method for reading csv file containing hour classes_restrictions for each grade.
 
-    # Extract subjects, convert into dictionary
-    subjects = df['subjects']
-    subjects_dict_reverse: dict = {i: subjects[i] for i in range(len(subjects))}
-    subjects_dict: dict = {subjects[i]: i for i in range(len(subjects))}
+        Input example
+        -------------
+        subjects	I.A		    II.A	    III.A
+        CJL	        8	LM	    7	KA	    7	VR
+        ANJ	        1	HO	    2	HO	    3	AG
+        SPJ         1	SP	    1	SP	    1	SP
+        MAT	        4	LM	    4	KA	    5	VR
 
-    # Number of rows, columns
-    row, col = df.shape
+        Return
+        ------
+        Initialize all variables.
+        """
 
-    # Select limiting columns
-    col_index = [i for i in range(col) if i % 2 == 1]  # Select limiting columns indexes
-    classes_restrictions = df.iloc[:, col_index].T.values.tolist()
+        # Import csv as DataFrame
+        path = 'resources/'
+        df = pd.read_csv(path + self.file_name)
 
-    # Extract classes
-    classes_labels = [df.columns.tolist()[i] for i in col_index]
-    classes_dict_reverse: dict = {i: classes_labels[i] for i in range(len(classes_labels))}
-    classes_dict: dict = {classes_labels[i]: i for i in range(len(classes_labels))}
+        # Extract subjects, convert into dictionary
+        subjects = df['subjects']
+        self.subjects_names = {i: subjects[i] for i in range(len(subjects))}
+        subjects_dict: dict = {subjects[i]: i for i in range(len(subjects))}
 
-    # Extract teachers
-    col_index = [i + 1 for i in range(col) if i % 2 == 1]  # Select limiting columns indexes
+        # Number of rows, columns
+        row, col = df.shape
 
-    teachers_series = pd.Series()
+        # Select limiting columns
+        col_index = [i for i in range(col) if i % 2 == 1]  # Select limiting columns indexes
+        classes_restrictions = df.iloc[:, col_index].T.values.tolist()
+        self.classes_restrictions = {i: classes_restrictions[i] for i in range(len(classes_restrictions))}
 
-    for i in col_index:
-        teachers_series = teachers_series.append(pd.Series(df.iloc[:, i].unique()))
+        # Extract classes
+        classes_labels = [df.columns.tolist()[i] for i in col_index]
+        self.classes_names = {i: classes_labels[i] for i in range(len(classes_labels))}
+        classes_dict: dict = {classes_labels[i]: i for i in range(len(classes_labels))}
 
-    teachers_series = pd.Series.dropna(teachers_series)
-    teachers_series = teachers_series.unique()
-    teachers_list = teachers_series.tolist()
+        # Extract teachers
+        col_index = [i + 1 for i in range(col) if i % 2 == 1]  # Select limiting columns indexes
 
-    teachers_dict_reverse: dict = {i: teachers_list[i] for i in range(len(teachers_list))}
-    teachers_dict: dict = {teachers_list[i]: i for i in range(len(teachers_list))}
+        teachers_series = pd.Series(dtype='str')
 
-    # Select (teacher, class) pairs (with respect to subject)
-    col_index = [i for i in range(col) if i % 2 == 0]  # Indexes
-    teachers_table = df.iloc[:, col_index]  # teachers table
-    teachers_table = teachers_table.fillna('nobody')  # fill NaN
-    teachers_table.columns = ['subjects'] + classes_labels  # rename columns
+        for i in col_index:
+            teachers_series = teachers_series.append(pd.Series(df.iloc[:, i].unique()))
 
-    # Teachers restrictions connected with (subject-class) pairs
-    teachers_restrictions = []
+        teachers_series = pd.Series.dropna(teachers_series)
+        teachers_series = teachers_series.unique()
+        teachers_list = teachers_series.tolist()
 
-    for t in teachers_list:
-        res = []
-        for c in classes_labels:
-            lst = teachers_table[teachers_table[c] == t]['subjects']
-            res = res + [(s, c) for s in lst]
-        teachers_restrictions.append(res)
+        teachers_reverse: dict = {i: teachers_list[i] for i in range(len(teachers_list))}
+        self.teachers_names = teachers_reverse
 
-    # Rewritten to dictionary coding
-    teachers_restrictions_code = []
+        # Select (teacher, class) pairs (with respect to subject)
+        col_index = [i for i in range(col) if i % 2 == 0]  # Indexes
+        teachers_table = df.iloc[:, col_index]  # teachers table
+        teachers_table = teachers_table.fillna('nobody')  # fill NaN
+        teachers_table.columns = ['subjects'] + classes_labels  # rename columns
 
-    for t in range(len(teachers_restrictions)):
-        res = []
-        for pair in teachers_restrictions[t]:
-            s, c = pair  # s, c = ('SJL', 'I.A')
-            pair_code = (subjects_dict[s], classes_dict[c])
-            res.append(pair_code)
-        teachers_restrictions_code.append(res)
+        # Teachers restrictions connected with (subject-class) pairs
+        teachers_restrictions = []
 
-    return subjects_dict_reverse, classes_restrictions, classes_labels, teachers_restrictions_code, teachers_dict_reverse
+        for t in teachers_list:
+            res = []
+            for c in classes_labels:
+                lst = teachers_table[teachers_table[c] == t]['subjects']
+                res = res + [(s, c) for s in lst]
+            teachers_restrictions.append(res)
+
+        # Rewritten to dictionary coding
+        teachers_restrictions_code = []
+
+        for t in range(len(teachers_restrictions)):
+            res = []
+            for pair in teachers_restrictions[t]:
+                s, c = pair  # s, c = ('SJL', 'I.A')
+                pair_code = (subjects_dict[s], classes_dict[c])
+                res.append(pair_code)
+            teachers_restrictions_code.append(res)
+
+        self.teachers_restrictions = {i: teachers_restrictions_code[i] for i in
+                                      range(len(teachers_restrictions_code))}
+        return
+
+    def _check_classes(self):
+        """
+        Checking input error: if each class has less than 30 hours per week.
+        """
+
+        for key, value in self.classes_restrictions.items():
+            if sum(value) > 30:
+                raise ValueError('Input limits for class {0} are violated. {0} has more than 30 hours per week.'
+                                 .format(self.classes_names[key]))
+
+    def _check_teachers(self):
+        """ Checking input error: if each teacher teaches less than 30 hours per week. """
+        # TODO: also with respect to individual preferences! e.g. only two days per week >> less than 2*6=12
+
+        for key, value in self.teachers_restrictions.items():
+            total_hours = 0
+            for sub, cls in value:
+                total_hours += self.classes_restrictions[cls][sub]
+
+            if total_hours > 30:
+                raise ValueError(
+                    'Input limits for teacher {0} are violated. {0} teaches more classes than his/her week max limit.'.format(
+                        self.teachers_names[key]))

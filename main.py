@@ -1,9 +1,14 @@
 import reader
 import optimization
 
-subjects, limits, classes, teachers_restrictions_code, teachers_dict_reverse = reader.reader()
+# Reading input file
+file_name = 'limits_bc.csv'
+my_reader = reader.Reader(file_name)
+classes_names, classes_restrictions, teachers_names, teachers_restrictions, subjects_names = my_reader.read()
 
-my_schedule = optimization.Scheduler(subjects, limits, classes, teachers_restrictions_code, teachers_dict_reverse)
+# Optimization
+my_schedule = optimization.Scheduler(classes_names, classes_restrictions, teachers_names, teachers_restrictions,
+                                     subjects_names)
 my_schedule.schedule()
 
 # TODO: Niektory ucitelia mozu ucit len v niektore dni
