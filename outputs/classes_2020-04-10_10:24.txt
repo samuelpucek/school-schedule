@@ -1,0 +1,48 @@
+            ** I.A **
+       1    2    3    4    5    6
+Pon  MAT  SJL  TSV  SJL  VYV     
+Utr  MAT  SJL  N/E  PVO          
+Str  PVO  MAT  TSV  SJL  SJL     
+Stv  VYV  SJL  MAT  SJL          
+Pia  HUV  SJL  TSV  SJL          
+
+            ** II.A **
+       1    2    3    4    5    6
+Pon  MAT  ANJ  N/E  MAT  SJL     
+Utr  TSV  SJL  PVO  SJL          
+Str  MAT  ANJ  MAT  VYV  SJL     
+Stv  SJL  MAT  SJL  HUV          
+Pia  TSV  VYV  PVO  SJL  SJL     
+
+            ** II.B **
+       1    2    3    4    5    6
+Pon  SJL  SJL  ANJ  TSV  MAT     
+Utr  SJL  TSV  SJL  VYV  MAT     
+Str  SJL  SJL  N/E  PVO          
+Stv  VYV  MAT  HUV  SJL  MAT     
+Pia  SJL  ANJ  MAT  PVO          
+
+            ** III.A **
+       1    2    3    4    5    6
+Pon  SJL  TSV  IFV  ANJ  SJL     
+Utr  MAT  VYV  SJL  PVC  SJL     
+Str  MAT  ANJ  SJL  N/E  SJL     
+Stv  HUV  ANJ  MAT  PDA  SJL     
+Pia  MAT  VLA  TSV  MAT  SJL     
+
+            ** III.B **
+       1    2    3    4    5    6
+Pon  SJL  N/E  ANJ  MAT  SJL     
+Utr  PVC  SJL  IFV  MAT  SJL     
+Str  VLA  TSV  HUV  SJL  ANJ     
+Stv  MAT  TSV  SJL  ANJ  SJL     
+Pia  PDA  MAT  VYV  MAT  SJL     
+
+            ** IV.A **
+       1    2    3    4    5    6
+Pon  VYV  PDA  PVC  MAT  SJL     
+Utr  IFV  PDA  TSV  SJL  SJL     
+Str  TSV  VLA  SJL  MAT  ANJ  SJL
+Stv  VLA  SJL  MAT  SJL  ANJ     
+Pia  ANJ  SJL  N/E  HUV  MAT     
+
