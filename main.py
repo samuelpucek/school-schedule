@@ -2,8 +2,7 @@ import reader
 import optimization
 
 # Reading input file
-file_name = 'limits_bc.csv'
-my_reader = reader.Reader(file_name)
+my_reader = reader.Reader()
 classes_names, classes_restrictions, teachers_names, teachers_restrictions, subjects_names = my_reader.read()
 
 # Optimization

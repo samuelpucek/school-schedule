@@ -4,8 +4,9 @@ import pandas as pd
 class Reader:
     """ Reading input files and running basic checks. """
 
-    def __init__(self, file_name: str):
-        self.file_name = file_name
+    def __init__(self):
+        self.file_name_classes = 'classes_limits.csv'
+        self.file_name_teachers = 'teachers_limits.csv'
 
         self.classes_names = dict()
         self.classes_restrictions = dict()
@@ -38,8 +39,8 @@ class Reader:
         """
 
         # Import csv as DataFrame
-        path = 'resources/'
-        df = pd.read_csv(path + self.file_name)
+        path = 'resources/bc/'
+        df = pd.read_csv(path + self.file_name_classes)
 
         # Extract subjects, convert into dictionary
         subjects = df['subjects']
@@ -51,7 +52,7 @@ class Reader:
 
         # Select limiting columns
         col_index = [i for i in range(col) if i % 2 == 1]  # Select limiting columns indexes
-        classes_restrictions = df.iloc[:, col_index].T.values.tolist()
+        classes_restrictions = df.iloc[:, col_index].fillna(0).T.values.tolist()
         self.classes_restrictions = {i: classes_restrictions[i] for i in range(len(classes_restrictions))}
 
         # Extract classes
@@ -103,6 +104,11 @@ class Reader:
 
         self.teachers_restrictions = {i: teachers_restrictions_code[i] for i in
                                       range(len(teachers_restrictions_code))}
+
+        # Read teachers day restrictions
+        path = 'resources/bc/'
+        df = pd.read_csv(path + self.file_name_teachers)
+        # print(df)
         return
 
     def _check_classes(self):
@@ -126,5 +132,9 @@ class Reader:
 
             if total_hours > 30:
                 raise ValueError(
-                    'Input limits for teacher {0} are violated. {0} teaches more classes than his/her week max limit.'.format(
-                        self.teachers_names[key]))
+                    'Input limits for teacher {0} are violated. {0} teaches more classes than his/her week max limit.'
+                    .format(self.teachers_names[key]))
+
+
+my_reader = Reader()
+my_reader.read()
