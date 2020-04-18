@@ -12,6 +12,7 @@ class Reader:
         self.classes_restrictions = dict()
         self.teachers_names = dict()
         self.teachers_restrictions = dict()
+        self.teachers_days = dict()
         self.subjects_names = dict()
 
     def read(self):
@@ -19,7 +20,8 @@ class Reader:
         self._file_reader()
         self._check_teachers()
         self._check_classes()
-        return self.classes_names, self.classes_restrictions, self.teachers_names, self.teachers_restrictions, self.subjects_names
+        return self.classes_names, self.classes_restrictions, self.teachers_names, self.teachers_restrictions, \
+               self.teachers_days, self.subjects_names
 
     def _file_reader(self):
         """
@@ -72,8 +74,8 @@ class Reader:
         teachers_series = teachers_series.unique()
         teachers_list = teachers_series.tolist()
 
-        teachers_reverse: dict = {i: teachers_list[i] for i in range(len(teachers_list))}
-        self.teachers_names = teachers_reverse
+        self.teachers_names: dict = {i: teachers_list[i] for i in range(len(teachers_list))}
+        teachers_names_reversed: dict = {teachers_list[i]: i for i in range(len(teachers_list))}
 
         # Select (teacher, class) pairs (with respect to subject)
         col_index = [i for i in range(col) if i % 2 == 0]  # Indexes
@@ -108,13 +110,28 @@ class Reader:
         # Read teachers day restrictions
         path = 'resources/bc/'
         df = pd.read_csv(path + self.file_name_teachers)
-        # print(df)
+
+        # Fill missing values with 0 (0 = not teaching that day)
+        df.fillna(0, inplace=True)
+
+        # Fill with ones
+        self.teachers_days = {i: (1, 1, 1, 1, 1) for i in range(len(teachers_list))}
+
+        # Extract
+        row, col = df.shape
+
+        # Replace requested days for teachers in the table
+        for r in range(row):
+            lst = df.iloc[r, :].tolist()
+            teacher = lst[0]
+            days = lst[1:]
+            days = tuple([1 if d == 'x' else d for d in days])
+            self.teachers_days[teachers_names_reversed[teacher]] = days  # Replace (1,1,1,1,1) with real requirements
+
         return
 
     def _check_classes(self):
-        """
-        Checking input error: if each class has less than 30 hours per week.
-        """
+        """Checking input error: if each class has less than 30 hours per week."""
 
         for key, value in self.classes_restrictions.items():
             if sum(value) > 30:
@@ -122,19 +139,21 @@ class Reader:
                                  .format(self.classes_names[key]))
 
     def _check_teachers(self):
-        """ Checking input error: if each teacher teaches less than 30 hours per week. """
-        # TODO: also with respect to individual preferences! e.g. only two days per week >> less than 2*6=12
+        """Checking input error: if each teacher teaches less than 30 hours per week."""
 
-        for key, value in self.teachers_restrictions.items():
+        for teacher_id, value in self.teachers_restrictions.items():
             total_hours = 0
             for sub, cls in value:
                 total_hours += self.classes_restrictions[cls][sub]
 
-            if total_hours > 30:
+            max_lim = sum(self.teachers_days[teacher_id]) * 6
+            if total_hours > max_lim:
                 raise ValueError(
                     'Input limits for teacher {0} are violated. {0} teaches more classes than his/her week max limit.'
-                    .format(self.teachers_names[key]))
+                        .format(self.teachers_names[teacher_id]))
 
 
-my_reader = Reader()
-my_reader.read()
+if __name__ == '__main__':
+    print('*** Running reader module ***')
+    my_reader = Reader()
+    my_reader.read()
