@@ -10,7 +10,7 @@ class Scheduler:
     """
 
     def __init__(self, classes_names: dict, classes_restrictions: dict, teachers_names: dict,
-                 teachers_restrictions: dict, subject_names: dict):
+                 teachers_restrictions: dict, teachers_days: dict, subject_names: dict):
         # Constants
         self.no_classes = len(classes_restrictions)  # number of classes
         self.no_subjects = len(subject_names)  # number of subjects
@@ -31,6 +31,7 @@ class Scheduler:
         self.classes = classes_names
         self.teachers_restrictions = teachers_restrictions
         self.teachers_dict_reverse = teachers_names
+        self.teachers_days = teachers_days
 
     def schedule(self):
         """
@@ -81,6 +82,11 @@ class Scheduler:
         for t in self.T:
             for s, c in self.teachers_restrictions[t]:
                 model += xsum(x[c][s][t][d][h] for d in self.D for h in self.H) == self.lim[c][s]
+
+        # Teachers teach only on selected days
+        for (t, d) in product(self.T, self.D):
+            if self.teachers_days[t][d] == 0:
+                model += xsum(x[c][s][t][d][h] for c in self.C for s in self.S for h in self.H) == 0
 
         # Max limit for the same subject in the same day
         # TODO: Celkom OK, 5x za tyzden len limit 2 (chyba), dvojhodinovky VYV (pripadne ine predmety) dorobit
